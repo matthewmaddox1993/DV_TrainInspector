@@ -5,5 +5,7 @@
   "Version": "1.0.0",
   "ManagerVersion": "0.27.3",
   "AssemblyName": "TrainInspector.dll",
-  "EntryMethod": "TrainInspector.Main.Load"
+  "EntryMethod": "TrainInspector.Main.Load",
+  "Repository": "https://raw.githubusercontent.com/matthewmaddox1993/DV_TrainInspector/refs/heads/main/repository.json"
+
 }
