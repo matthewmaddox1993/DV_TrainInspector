@@ -94,7 +94,9 @@
 
   <PropertyGroup>
     <SolutionRootDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</SolutionRootDir>
-    <InfoJsonPath>$(SolutionRootDir)Info.json</InfoJsonPath>
+    <InfoJsonPath>$(MSBuildThisFileDirectory)Info.json</InfoJsonPath>
+    <ReadmePath>$(MSBuildThisFileDirectory)README.md</ReadmePath>
+    <ChangelogPath>$(MSBuildThisFileDirectory)CHANGELOG.md</ChangelogPath>
     <ArtifactsDir>$(SolutionRootDir)artifacts\</ArtifactsDir>
   </PropertyGroup>
 
@@ -117,11 +119,10 @@
     <MakeDir Directories="$(ArtifactsDir)" />
 
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(StagingDir)" />
-    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(StagingDir)" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
-    <Copy SourceFiles="$(InfoJsonPath)" DestinationFolder="$(StagingDir)" Condition="Exists('$(InfoJsonPath)')" />
-    <Copy SourceFiles="$(SolutionRootDir)README.md" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)README.md')" />
+    <Copy SourceFiles="$(InfoJsonPath)" DestinationFolder="$(StagingDir)" />
+    <Copy SourceFiles="$(ReadmePath)" DestinationFolder="$(StagingDir)" />
     <Copy SourceFiles="$(SolutionRootDir)LICENSE" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)LICENSE')" />
-    <Copy SourceFiles="$(SolutionRootDir)CHANGELOG.md" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)CHANGELOG.md')" />
+    <Copy SourceFiles="$(ChangelogPath)" DestinationFolder="$(StagingDir)" />
 
     <Delete Files="$(TargetZipPath)" Condition="Exists('$(TargetZipPath)')" />
     <ZipDirectory SourceDirectory="$(StagingRoot)" DestinationFile="$(TargetZipPath)" Overwrite="true" />
