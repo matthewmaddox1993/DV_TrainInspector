@@ -1,9 +1,0 @@
-{
-  "Id": "TrainInspector",
-  "DisplayName": "Train Inspector",
-  "Author": "Matt M.",
-  "Version": "1.0.0",
-  "ManagerVersion": "0.27.3",
-  "AssemblyName": "TrainInspector.dll",
-  "EntryMethod": "TrainInspector.Main.Load"
-}
