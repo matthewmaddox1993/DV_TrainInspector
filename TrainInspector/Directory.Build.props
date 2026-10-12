@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <DerailValleyDir Condition="'$(DERAIL_VALLEY_DIR)' != ''">$(DERAIL_VALLEY_DIR)</DerailValleyDir>
+    <DerailValleyDir Condition="'$(DerailValleyDir)' == '' And Exists('D:\Games\Derail Valley\DerailValley.exe')">D:\Games\Derail Valley</DerailValleyDir>
+    <DerailValleyDir Condition="'$(DerailValleyDir)' == '' And Exists('C:\Program Files (x86)\Steam\steamapps\common\Derail Valley\DerailValley.exe')">C:\Program Files (x86)\Steam\steamapps\common\Derail Valley</DerailValleyDir>
+    <DVManagedDir Condition="'$(DerailValleyDir)' != ''">$(DerailValleyDir)\DerailValley_Data\Managed</DVManagedDir>
+  </PropertyGroup>
+</Project>

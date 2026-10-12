@@ -1,0 +1,135 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>TrainInspector</AssemblyName>
+    <RootNamespace>TrainInspector</RootNamespace>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>1591;1701;1702</NoWarn>
+  </PropertyGroup>
+
+  <Target Name="ValidateDerailValleyPath" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(DVManagedDir)' == '' Or !Exists('$(DVManagedDir)\Assembly-CSharp.dll')"
+           Text="Derail Valley was not found. Set DERAIL_VALLEY_DIR to the folder containing DerailValley.exe." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(DVManagedDir)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.BrakeSystem">
+      <HintPath>$(DVManagedDir)\DV.BrakeSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.BuildInfo">
+      <HintPath>$(DVManagedDir)\DV.BuildInfo.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.CabControls.Spec">
+      <HintPath>$(DVManagedDir)\DV.CabControls.Spec.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.Inventory">
+      <HintPath>$(DVManagedDir)\DV.Inventory.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.Simulation">
+      <HintPath>$(DVManagedDir)\DV.Simulation.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.ThingTypes">
+      <HintPath>$(DVManagedDir)\DV.ThingTypes.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.CharacterController">
+      <HintPath>$(DVManagedDir)\DV.CharacterController.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.UI">
+      <HintPath>$(DVManagedDir)\DV.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DV.Utils">
+      <HintPath>$(DVManagedDir)\DV.Utils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(DVManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(DVManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(DVManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(DVManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(DVManagedDir)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(DVManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityModManager">
+      <HintPath>$(DVManagedDir)\UnityModManager\UnityModManager.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(DVManagedDir)\UnityModManager\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <SolutionRootDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</SolutionRootDir>
+    <InfoJsonPath>$(SolutionRootDir)Info.json</InfoJsonPath>
+    <ArtifactsDir>$(SolutionRootDir)artifacts\</ArtifactsDir>
+  </PropertyGroup>
+
+  <Target Name="PackageModZip" AfterTargets="Build">
+    <PropertyGroup>
+      <ExtractedModVersion Condition="Exists('$(InfoJsonPath)')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(InfoJsonPath)')), '&quot;Version&quot;\s*:\s*&quot;([^&quot;]+)&quot;').Groups[1].Value)</ExtractedModVersion>
+      <ModVersion Condition="'$(ExtractedModVersion)' != ''">$(ExtractedModVersion)</ModVersion>
+      <ModVersion Condition="'$(ModVersion)' == ''">$(Version)</ModVersion>
+      <ModZipFileName>TrainInspector-$(ModVersion).zip</ModZipFileName>
+      <ModConfigZipFileName>TrainInspector-$(ModVersion)-$(Configuration).zip</ModConfigZipFileName>
+      <StagingRoot>$(IntermediateOutputPath)ModPackageStaging\</StagingRoot>
+      <StagingDir>$(StagingRoot)TrainInspector\</StagingDir>
+      <TargetZipPath>$(TargetDir)$(ModZipFileName)</TargetZipPath>
+      <ArtifactsZipPath>$(ArtifactsDir)$(ModZipFileName)</ArtifactsZipPath>
+      <ArtifactsConfigZipPath>$(ArtifactsDir)$(ModConfigZipFileName)</ArtifactsConfigZipPath>
+    </PropertyGroup>
+
+    <RemoveDir Directories="$(StagingRoot)" Condition="Exists('$(StagingRoot)')" />
+    <MakeDir Directories="$(StagingDir)" />
+    <MakeDir Directories="$(ArtifactsDir)" />
+
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(StagingDir)" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(StagingDir)" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+    <Copy SourceFiles="$(InfoJsonPath)" DestinationFolder="$(StagingDir)" Condition="Exists('$(InfoJsonPath)')" />
+    <Copy SourceFiles="$(SolutionRootDir)README.md" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)README.md')" />
+    <Copy SourceFiles="$(SolutionRootDir)LICENSE" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)LICENSE')" />
+    <Copy SourceFiles="$(SolutionRootDir)CHANGELOG.md" DestinationFolder="$(StagingDir)" Condition="Exists('$(SolutionRootDir)CHANGELOG.md')" />
+
+    <Delete Files="$(TargetZipPath)" Condition="Exists('$(TargetZipPath)')" />
+    <ZipDirectory SourceDirectory="$(StagingRoot)" DestinationFile="$(TargetZipPath)" Overwrite="true" />
+
+    <Copy SourceFiles="$(TargetZipPath)" DestinationFiles="$(ArtifactsZipPath)" />
+    <Copy SourceFiles="$(TargetZipPath)" DestinationFiles="$(ArtifactsConfigZipPath)" />
+
+    <Message Importance="High" Text="[TrainInspector] Packaged $(Configuration) mod zip: $(TargetZipPath)" />
+    <Message Importance="High" Text="[TrainInspector] Artifacts archive: $(ArtifactsZipPath)" />
+  </Target>
+</Project>

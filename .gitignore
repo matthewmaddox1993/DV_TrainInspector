@@ -1,0 +1,24 @@
+## Build & Output Directories
+[Bb]in/
+[Oo]bj/
+artifacts/
+dist/
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+## IDE & Editor files
+.vs/
+.idea/
+*.swp
+*.*~
+
+## Runtime generated files & logs
+*.log
+TrainInspectorState.xml
+*.ps1
