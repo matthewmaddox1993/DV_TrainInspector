@@ -171,24 +171,6 @@ All options can be configured in the **Unity Mod Manager** settings menu (**Ctrl
 - .NET SDK (supporting `net48` targeting pack)
 - Derail Valley Build 99.7 installation
 
-### Build Instructions
-```powershell
-# Set game directory if not in D:\Games\Derail Valley or standard Steam path:
-$env:DERAIL_VALLEY_DIR = 'D:\Games\Derail Valley'
-
-# Build the solution:
-dotnet build .\DVTrainInspect.sln -c Release
-
-# Package the mod into a distribution zip:
-.\package.ps1 -SkipBuild
-```
-
-### Local Deployment
-To build and copy the mod directly to your game directory:
-```powershell
-.\deploy.ps1
-```
-*(Note: `deploy.ps1` safely halts if Derail Valley is currently running to avoid file lock conflicts).*
 
 ---
 
