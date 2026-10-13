@@ -32,6 +32,7 @@ namespace TrainInspector
         internal static InspectorInventoryItemManager Instance { get; private set; }
 
         private float nextEnsureTime;
+        private StartingItemsController cachedStartingItems;
         private bool warnedMissingSource;
         private bool warnedInvalidSource;
         private bool warnedInventoryFull;
@@ -55,6 +56,7 @@ namespace TrainInspector
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             nextEnsureTime = 0f;
+            cachedStartingItems = null;
             warnedInventoryFull = false;
         }
 
@@ -105,12 +107,6 @@ namespace TrainInspector
                 return false;
             }
 
-            StartingItemsController startingItems = FindObjectOfType<StartingItemsController>();
-            if (startingItems != null && !startingItems.itemsLoaded)
-            {
-                return false;
-            }
-
             Inventory inventory = SingletonBehaviour<Inventory>.Instance;
             if (inventory == null)
             {
@@ -121,6 +117,19 @@ namespace TrainInspector
             {
                 warnedInventoryFull = false;
                 return true;
+            }
+
+            // The clipboard is normally present, so avoid a scene-wide object search during the
+            // recurring safety check. We only need the starting-items controller while recovering
+            // a missing clipboard, and cache it for the rest of the scene.
+            if (cachedStartingItems == null)
+            {
+                cachedStartingItems = FindObjectOfType<StartingItemsController>();
+            }
+
+            if (cachedStartingItems != null && !cachedStartingItems.itemsLoaded)
+            {
+                return false;
             }
 
             CleanStrayClipboards(inventory);

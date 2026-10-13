@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-10-12
+
+### Changed
+- **Mechanical Fault Processing:** Active brake faults are indexed by car, avoiding repeated full-list searches from every brake-system physics tick.
+- **Fault Activation Updates:** Distance-based fault processing now runs at five updates per second instead of rebuilding consist data every frame.
+- **Inspection Polling:** Reduced background consist, brake observation, and player-proximity polling while retaining responsive inspection feedback.
+- **Persistence Timers:** Certificate and inspection-history countdowns are accumulated and applied in batches instead of iterating every saved record every frame.
+- **Optional Mod Compatibility:** Cached `LocoOwnership` integration discovery and limited reflective teleport-state polling to four updates per second.
+
+### Fixed
+- **Periodic Gameplay Hitches:** Eliminated the full loaded-assembly scan that ran every two seconds whenever the optional `LocoOwnership` mod was not installed.
+- **Clipboard Upkeep Hitches:** Avoided recurring scene-wide object searches while the Inspection Clipboard is already present, and cached the starting-items controller per scene.
+
+---
+
 ## [1.0.0] - 2026-10-11
 
 ### Added

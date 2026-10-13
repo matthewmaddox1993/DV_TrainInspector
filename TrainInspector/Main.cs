@@ -38,7 +38,7 @@ namespace TrainInspector
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
 
                 string build = BuildInfo.BUILD_VERSION_STR;
-                string modVersion = modEntry.Info != null ? modEntry.Info.Version : "1.0.0";
+                string modVersion = modEntry.Info != null ? modEntry.Info.Version : "1.0.1";
                 modEntry.Logger.Log("Train Inspector " + modVersion + " loaded for Derail Valley 99.7 (detected " + build + ").");
                 if (BuildInfo.BUILD_VERSION_MAJOR != 99)
                 {

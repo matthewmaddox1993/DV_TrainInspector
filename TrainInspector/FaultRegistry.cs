@@ -8,13 +8,22 @@ namespace TrainInspector
 {
     internal static class FaultRegistry
     {
+        private const float FaultUpdateIntervalSeconds = 0.2f;
+
         internal static string LastEvent { get; private set; }
         internal static float LastEventAt { get; private set; }
 
         private static readonly HashSet<string> reusableGuids = new HashSet<string>();
-        private static readonly Dictionary<BrakeSystem, TrainCar> brakeToCarCache = new Dictionary<BrakeSystem, TrainCar>();
+        private static readonly Dictionary<string, TrainCar> reusableCarsByGuid = new Dictionary<string, TrainCar>();
+        private static readonly Dictionary<string, List<MechanicalFaultData>> activeBrakeFaultsByCarGuid =
+            new Dictionary<string, List<MechanicalFaultData>>();
+        private static readonly Dictionary<BrakeSystem, List<MechanicalFaultData>> brakeFaultCache =
+            new Dictionary<BrakeSystem, List<MechanicalFaultData>>();
         private static bool hasActiveBrakeFaults;
         private static bool activeStateDirty = true;
+        private static Trainset lastTickTrainset;
+        private static float faultUpdateElapsed;
+        private static float pendingTravelMetres;
 
         internal static void InvalidateActiveFaultState()
         {
@@ -30,6 +39,8 @@ namespace TrainInspector
 
             activeStateDirty = false;
             hasActiveBrakeFaults = false;
+            activeBrakeFaultsByCarGuid.Clear();
+            brakeFaultCache.Clear();
             List<MechanicalFaultData> faults = InspectionPersistence.Data.Faults;
             if (faults == null || faults.Count == 0)
             {
@@ -39,14 +50,24 @@ namespace TrainInspector
             for (int i = 0; i < faults.Count; i++)
             {
                 MechanicalFaultData fault = faults[i];
-                if (fault != null && fault.Active)
+                if (fault == null || !fault.Active
+                    || (MechanicalFaultType)fault.FaultTypeValue == MechanicalFaultType.CouplerSeparation)
                 {
-                    hasActiveBrakeFaults = true;
-                    return true;
+                    continue;
                 }
+
+                if (!activeBrakeFaultsByCarGuid.TryGetValue(fault.CarGuid,
+                        out List<MechanicalFaultData> carFaults))
+                {
+                    carFaults = new List<MechanicalFaultData>();
+                    activeBrakeFaultsByCarGuid[fault.CarGuid] = carFaults;
+                }
+
+                carFaults.Add(fault);
+                hasActiveBrakeFaults = true;
             }
 
-            return false;
+            return hasActiveBrakeFaults;
         }
 
         internal static List<MechanicalFaultData> RollForMissedItems(
@@ -340,21 +361,46 @@ namespace TrainInspector
             return triggered;
         }
 
-        internal static void TickTrain(Trainset trainset, float distanceMetres)
+        internal static void TickTrain(Trainset trainset, float distanceMetres, float deltaTime)
         {
             if (!Main.Settings.EnableMechanicalFailures || trainset == null || trainset.cars == null
                 || distanceMetres <= 0f || InspectionPersistence.Data.Faults.Count == 0)
             {
+                if (!ReferenceEquals(lastTickTrainset, trainset))
+                {
+                    lastTickTrainset = trainset;
+                    faultUpdateElapsed = 0f;
+                    pendingTravelMetres = 0f;
+                }
+
                 return;
             }
 
-            reusableGuids.Clear();
+            if (!ReferenceEquals(lastTickTrainset, trainset))
+            {
+                lastTickTrainset = trainset;
+                faultUpdateElapsed = 0f;
+                pendingTravelMetres = 0f;
+            }
+
+            faultUpdateElapsed += Mathf.Max(0f, deltaTime);
+            pendingTravelMetres += distanceMetres;
+            if (faultUpdateElapsed < FaultUpdateIntervalSeconds)
+            {
+                return;
+            }
+
+            distanceMetres = pendingTravelMetres;
+            faultUpdateElapsed = 0f;
+            pendingTravelMetres = 0f;
+
+            reusableCarsByGuid.Clear();
             for (int index = 0; index < trainset.cars.Count; index++)
             {
                 TrainCar car = trainset.cars[index];
                 if (car != null)
                 {
-                    reusableGuids.Add(TrainIdentity.SafeCarGuid(car));
+                    reusableCarsByGuid[TrainIdentity.SafeCarGuid(car)] = car;
                 }
             }
 
@@ -363,7 +409,7 @@ namespace TrainInspector
             for (int index = 0; index < faults.Count; index++)
             {
                 MechanicalFaultData fault = faults[index];
-                if (fault == null || !reusableGuids.Contains(fault.CarGuid))
+                if (fault == null || !reusableCarsByGuid.TryGetValue(fault.CarGuid, out TrainCar car))
                 {
                     continue;
                 }
@@ -389,12 +435,6 @@ namespace TrainInspector
                 }
 
                 if (!fault.Active)
-                {
-                    continue;
-                }
-
-                TrainCar car = FindCar(trainset, fault.CarGuid);
-                if (car == null)
                 {
                     continue;
                 }
@@ -435,26 +475,23 @@ namespace TrainInspector
                 return;
             }
 
-            if (!brakeToCarCache.TryGetValue(brake, out TrainCar car) || car == null)
+            if (!brakeFaultCache.TryGetValue(brake, out List<MechanicalFaultData> faults))
             {
-                car = brake.GetComponent<TrainCar>() ?? brake.GetComponentInParent<TrainCar>();
-                if (car != null)
-                {
-                    brakeToCarCache[brake] = car;
-                }
+                TrainCar car = brake.GetComponent<TrainCar>() ?? brake.GetComponentInParent<TrainCar>();
+                string guid = car == null ? null : TrainIdentity.SafeCarGuid(car);
+                activeBrakeFaultsByCarGuid.TryGetValue(guid ?? string.Empty, out faults);
+                brakeFaultCache[brake] = faults;
             }
 
-            if (car == null)
+            if (faults == null)
             {
                 return;
             }
 
-            string guid = TrainIdentity.SafeCarGuid(car);
-            List<MechanicalFaultData> faults = InspectionPersistence.Data.Faults;
             for (int index = 0; index < faults.Count; index++)
             {
                 MechanicalFaultData fault = faults[index];
-                if (fault == null || !fault.Active || fault.CarGuid != guid)
+                if (fault == null || !fault.Active)
                 {
                     continue;
                 }

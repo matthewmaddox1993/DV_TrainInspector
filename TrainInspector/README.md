@@ -1,7 +1,7 @@
 # Train Inspector
 
 [![Game Version](https://img.shields.io/badge/Derail%20Valley-Build%2099.7-blue.svg)](http://www.derailvalley.com/)
-[![Mod Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/)
+[![Mod Version](https://img.shields.io/badge/Version-1.0.1-brightgreen.svg)](https://github.com/)
 [![UMM](https://img.shields.io/badge/Unity%20Mod%20Manager-0.27.3%2B-orange.svg)](https://www.nexusmods.com/derailvalley/mods/plugins)
 [![Target Framework](https://img.shields.io/badge/.NET%20Framework-4.8-purple.svg)](https://dotnet.microsoft.com/)
 
@@ -51,7 +51,7 @@ It puts you in the boots of a real railroad mechanical inspector and locomotive 
 ## Installation
 
 ### Via Unity Mod Manager (Recommended)
-1. Download `TrainInspector_v1.0.0.zip` (or `TrainInspector-1.0.0.zip`).
+1. Download `TrainInspector-1.0.1.zip`.
 2. Open the **Unity Mod Manager** installer GUI for Derail Valley.
 3. Switch to the **Mods** tab.
 4. Drag and drop the zip file onto the manager window.
@@ -177,6 +177,10 @@ All options can be configured in the **Unity Mod Manager** settings menu (**Ctrl
 ## Release History
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version notes.
+
+### [1.0.1] - Performance and Stability
+- Removed periodic gameplay hitches caused by recurring optional-mod and scene-wide searches.
+- Reduced background inspection, persistence, and mechanical-fault processing overhead.
 
 ### [1.0.0] - Official Public Release
 - **Official Public Release:** Promoted Train Inspector to 1.0.0 with full feature completeness and stability.

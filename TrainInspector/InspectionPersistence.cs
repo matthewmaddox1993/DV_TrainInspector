@@ -77,19 +77,23 @@ namespace TrainInspector
 
     internal static class InspectionPersistence
     {
+        private const float TimeUpdateIntervalSeconds = 1f;
         private static string statePath;
+        private static float pendingElapsedSeconds;
 
         internal static InspectorRuntimeData Data { get; private set; } = new InspectorRuntimeData();
 
         internal static void Initialize(string modDirectory)
         {
             statePath = Path.Combine(modDirectory, "TrainInspectorState.xml");
+            pendingElapsedSeconds = 0f;
             Data = Load();
             Normalize();
         }
 
         internal static void Save()
         {
+            FlushPendingElapsedTime();
             if (string.IsNullOrEmpty(statePath))
             {
                 return;
@@ -169,7 +173,24 @@ namespace TrainInspector
                 return;
             }
 
-            float deltaHours = deltaTime / 3600f;
+            pendingElapsedSeconds += deltaTime;
+            if (pendingElapsedSeconds < TimeUpdateIntervalSeconds)
+            {
+                return;
+            }
+
+            FlushPendingElapsedTime();
+        }
+
+        private static void FlushPendingElapsedTime()
+        {
+            if (pendingElapsedSeconds <= 0f)
+            {
+                return;
+            }
+
+            float deltaHours = pendingElapsedSeconds / 3600f;
+            pendingElapsedSeconds = 0f;
             List<InspectionCertificateData> certs = Data.Certificates;
             if (certs != null)
             {

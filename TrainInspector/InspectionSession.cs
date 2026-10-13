@@ -530,7 +530,7 @@ namespace TrainInspector
             float elapsed = Mathf.Max(0f, deltaTime);
 
             consistCheckElapsed += elapsed;
-            if (consistCheckElapsed >= 0.2f)
+            if (consistCheckElapsed >= 0.5f)
             {
                 consistCheckElapsed = 0f;
                 if (!ConsistStillMatches())
@@ -556,14 +556,14 @@ namespace TrainInspector
             }
 
             observationElapsed += elapsed;
-            if (observationElapsed >= 0.05f)
+            if (observationElapsed >= 0.1f)
             {
                 observationElapsed = 0f;
                 RefreshObservations();
             }
 
             proximityElapsed += elapsed;
-            if (proximityElapsed >= 0.1f)
+            if (proximityElapsed >= 0.2f)
             {
                 proximityElapsed = 0f;
                 UpdatePlayerProximity();

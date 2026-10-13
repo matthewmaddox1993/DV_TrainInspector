@@ -29,6 +29,7 @@ namespace TrainInspector
         private const float DepartureSustainedDuration = 2.0f;
         private const float DepartureMinimumDistance = 12.0f;
         private const float MaxTeleportVelocityThreshold = 45.0f;
+        private const float LocoOwnershipPollIntervalSeconds = 0.25f;
 
         private static string currentSignature;
         private static bool departureHandled;
@@ -45,8 +46,9 @@ namespace TrainInspector
         private static float continuousRunningTimer;
 
         private static FieldInfo locoOwnershipTeleportingField;
-        private static float lastLocoOwnershipLookupTime = -10f;
-        private static bool locoOwnershipNotFound;
+        private static bool locoOwnershipLookupComplete;
+        private static float nextLocoOwnershipPollTime;
+        private static bool cachedLocoOwnershipTeleporting;
 
         internal static PenaltyEvent LastPenalty { get; private set; }
 
@@ -75,6 +77,8 @@ namespace TrainInspector
             accumulatedDepartureDistance = 0f;
             trainHasSettledStopped = false;
             continuousRunningTimer = 0f;
+            nextLocoOwnershipPollTime = 0f;
+            cachedLocoOwnershipTeleporting = false;
             LastPenalty = null;
         }
 
@@ -93,55 +97,60 @@ namespace TrainInspector
 
         private static bool IsLocoOwnershipTeleporting()
         {
-            if (locoOwnershipTeleportingField == null && !locoOwnershipNotFound)
+            if (!locoOwnershipLookupComplete)
             {
-                if (Time.time - lastLocoOwnershipLookupTime > 2f)
-                {
-                    lastLocoOwnershipLookupTime = Time.time;
-                    try
-                    {
-                        Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                        for (int i = 0; i < assemblies.Length; i++)
-                        {
-                            Assembly asm = assemblies[i];
-                            if (asm != null && string.Equals(asm.GetName().Name, "LocoOwnership", StringComparison.OrdinalIgnoreCase))
-                            {
-                                Type teleporterType = asm.GetType("LocoOwnership.Shared.CarTeleporter", false);
-                                if (teleporterType != null)
-                                {
-                                    locoOwnershipTeleportingField = teleporterType.GetField("isTeleportingTrain",
-                                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-                                }
-
-                                if (locoOwnershipTeleportingField == null)
-                                {
-                                    locoOwnershipNotFound = true;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        // Silently ignore reflection errors
-                    }
-                }
-            }
-
-            if (locoOwnershipTeleportingField != null)
-            {
+                // Optional mod integration is resolved once. Previously, when LocoOwnership was not
+                // installed, every two seconds allocated an assembly array and scanned the entire
+                // AppDomain, producing the periodic hitch reported by players.
+                locoOwnershipLookupComplete = true;
                 try
                 {
-                    object val = locoOwnershipTeleportingField.GetValue(null);
-                    return val is bool b && b;
+                    Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    for (int i = 0; i < assemblies.Length; i++)
+                    {
+                        Assembly asm = assemblies[i];
+                        if (asm != null && string.Equals(asm.GetName().Name, "LocoOwnership", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Type teleporterType = asm.GetType("LocoOwnership.Shared.CarTeleporter", false);
+                            if (teleporterType != null)
+                            {
+                                locoOwnershipTeleportingField = teleporterType.GetField("isTeleportingTrain",
+                                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                            }
+
+                            break;
+                        }
+                    }
                 }
                 catch
                 {
-                    return false;
+                    // Silently ignore optional-mod reflection errors.
                 }
             }
 
-            return false;
+            if (locoOwnershipTeleportingField == null)
+            {
+                return false;
+            }
+
+            float now = Time.unscaledTime;
+            if (now < nextLocoOwnershipPollTime)
+            {
+                return cachedLocoOwnershipTeleporting;
+            }
+
+            nextLocoOwnershipPollTime = now + LocoOwnershipPollIntervalSeconds;
+            try
+            {
+                object val = locoOwnershipTeleportingField.GetValue(null);
+                cachedLocoOwnershipTeleporting = val is bool b && b;
+            }
+            catch
+            {
+                cachedLocoOwnershipTeleporting = false;
+            }
+
+            return cachedLocoOwnershipTeleporting;
         }
 
         internal static void Tick(InspectionSession activeSession, float deltaTime)
@@ -237,7 +246,7 @@ namespace TrainInspector
                 distanceSinceDeparture += travelled;
             }
 
-            FaultRegistry.TickTrain(trainset, travelled);
+            FaultRegistry.TickTrain(trainset, travelled, deltaTime);
 
             float departureSpeed = Main.Settings.DepartureSpeedKmh / 3.6f;
             if (!departureHandled)
